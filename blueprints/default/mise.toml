@@ -1,0 +1,19 @@
+[tools]
+cue = "latest"
+
+[tasks.init]
+description = "Initialize CUE module for this repo (pull repo-forge templates) and render configs"
+run = [
+  'cue mod init "github.com/repsejnworb/${PWD##*/}"',
+
+  'cue mod get github.com/repsejnworb/repo-forge/templates@v1',
+  'cue mod tidy',
+
+  'mkdir -p .github/workflows',
+  'cue export -e \'Outputs[".github/workflows/ci.yml"]\'      --out yaml -f > .github/workflows/ci.yml',
+  'cue export -e \'Outputs[".github/workflows/release.yml"]\'  --out yaml -f > .github/workflows/release.yml',
+  'cue export -e \'Outputs["lefthook.yml"]\'                   --out yaml -f > lefthook.yml',
+  'cue export -e \'Outputs["cog.toml"]\'                       --out toml -f > cog.toml',
+
+  'cue export -e \'Outputs["mise.toml"]\' --out toml -f > mise.toml'
+]
