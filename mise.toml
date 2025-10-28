@@ -1,0 +1,9 @@
+[settings]
+lockfile = true
+
+[tools]
+cue        = "latest"
+gh         = "latest"
+cocogitto  = "latest"
+lefthook   = "latest"
+

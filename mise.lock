@@ -1,0 +1,15 @@
+[[tools.cocogitto]]
+version = "6.4.0"
+backend = "aqua:cocogitto/cocogitto"
+
+[[tools.cue]]
+version = "0.14.2"
+backend = "aqua:cue-lang/cue"
+
+[[tools.gh]]
+version = "2.82.1"
+backend = "aqua:cli/cli"
+
+[[tools.lefthook]]
+version = "2.0.1"
+backend = "aqua:evilmartians/lefthook"
