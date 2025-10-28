@@ -7,3 +7,221 @@ gh         = "latest"
 cocogitto  = "latest"
 lefthook   = "latest"
 
+[env]
+MISE_CI_WORKFLOW = "ci.yml"
+MISE_CI_TIMEOUT  = "30m"
+
+# ===============================
+#  Blueprints (generated via CUE)
+# ===============================
+
+[tasks."blueprints:build"]
+description = "Render templates/ (CUE) into blueprints/default (incremental)"
+depends     = ["cue:tidy"]
+sources     = ["templates/**/*.cue", "templates/cue.mod/**"]
+outputs     = ["blueprints/default/.stamp"]
+run = [
+  '''
+  set -euo pipefail
+  tmp=$(mktemp -d)
+  mkdir -p "$tmp/.github/workflows"
+  cue export templates -p workflows --out yaml -f > "$tmp/.github/workflows/ci.yml"
+  cue export templates -p mise       --out toml -f > "$tmp/mise.toml"
+  cp templates/blueprint.README.md "$tmp/README.md" 2>/dev/null || true
+  cp templates/.gitignore           "$tmp/.gitignore" 2>/dev/null || true
+  mkdir -p blueprints/default
+  rsync -a --delete "$tmp"/ blueprints/default/
+  touch blueprints/default/.stamp
+  '''
+]
+
+[tasks."blueprints:watch"]
+description = "Watch CUE templates and rebuild blueprints on change"
+run         = "mise watch blueprints:build"
+
+[tasks."cue:tidy"]
+description = "cue mod tidy inside templates/"
+hide        = true
+run         = ["cd templates", "cue mod tidy"]
+
+# ===============================
+#  Create NEW repo from blueprint
+# ===============================
+
+[tasks.new]
+description = "Create a new GitHub repo from blueprints/default and push initial commit"
+usage = '''
+arg  "<name>"                 help="Repository name (e.g., cpout)"
+flag "--visibility <vis>"     help="Repo visibility"      default="public" { choices "public" "private" "internal" }
+flag "--description <text>"   help="Repo description"     default="Generated from repo-forge"
+flag "--branch <branch>"      help="Default branch name"  default="master"
+flag "--homepage <url>"       help="Homepage URL"         default=""
+flag "--disable-issues"       help="Disable issues"       default=true
+flag "--disable-wiki"         help="Disable wiki"         default=true
+'''
+run = [
+  { task = "gh:ensure-auth" },
+  { task = "blueprints:build" },
+  '''
+  set -euo pipefail
+  name="${usage_name?}"
+  vis="--${usage_visibility?}"
+  desc_opt=(--description "${usage_description?}")
+  home_opt=()
+  [ -n "${usage_homepage?}" ] && home_opt=(--homepage "${usage_homepage?}")
+  issues_opt=()
+  [ "${usage_disable_issues?}" = "true" ] && issues_opt=(--disable-issues)
+  wiki_opt=()
+  [ "${usage_disable_wiki?}"   = "true" ] && wiki_opt=(--disable-wiki)
+
+  gh repo create "repsejnworb/$name" "$vis" \
+    "${desc_opt[@]}" "${home_opt[@]}" \
+    "${issues_opt[@]}" "${wiki_opt[@]}" \
+    --clone
+  ''',
+  'rsync -a --exclude ".DS_Store" blueprints/default/ "${usage_name?}"/',
+  '''
+  set -euo pipefail
+  cd "${usage_name?}"
+  git checkout -B "${usage_branch?}"
+  git add .
+  git commit -m "chore: bootstrap from repo-forge"
+  git push -u origin "${usage_branch?}"
+  '''
+]
+
+[tasks."new:local"]
+description = "Scaffold a new repo locally from blueprints/default (no GitHub create)"
+usage = '''
+arg "<path>" help="Target directory path (will be created if missing)"
+'''
+run = [
+  'mkdir -p "${usage_path?}"',
+  'rsync -a --exclude ".DS_Store" blueprints/default/ "${usage_path?}"/',
+  '''
+  set -euo pipefail
+  cd "${usage_path?}"
+  git init
+  git add .
+  git commit -m "chore: bootstrap locally from repo-forge"
+  '''
+]
+
+# ===============================
+#  Repo update flows
+# ===============================
+
+[tasks.regen]
+description = "Re-export templates and refresh current repo files from blueprints/default"
+run         = [
+  { task = "blueprints:build" },
+  'rsync -a --exclude ".stamp" blueprints/default/. ./',
+]
+
+[tasks.sync]
+description = "Update to latest tagged standards module and regenerate outputs"
+usage = '''
+flag "--series <major>" help="Module series to track" default="v1"
+flag "--tag <ver>"      help="Exact module tag (overrides --series)" default=""
+'''
+run = [
+  { task = "cue:mod-update" },
+  { task = "regen" },
+]
+
+[tasks."cue:mod-update"]
+description = "Update CUE module dependency"
+usage = '''
+flag "--series <major>" help="Module series to track" default="v1"
+flag "--tag <ver>"      help="Exact module tag (overrides --series)" default=""
+'''
+run = [
+  "cd templates",
+  '''
+  set -euo pipefail
+  if [ -n "${usage_tag?}" ]; then
+    cue mod get "github.com/repsejnworb/repo-forge/templates@${usage_tag?}"
+  else
+    cue mod get -u "github.com/repsejnworb/repo-forge/templates@${usage_series?}"
+  fi
+  cue mod tidy
+  '''
+]
+
+[tasks.doctor]
+description = "Detect drift: render to tmp & diff against committed blueprints"
+run = [
+  '''
+  set -euo pipefail
+  tmp=$(mktemp -d)
+  mkdir -p "$tmp/.github/workflows"
+  cue export templates -p workflows --out yaml -f > "$tmp/.github/workflows/ci.yml"
+  cue export templates -p mise       --out toml -f > "$tmp/mise.toml"
+  if ! diff -ruN blueprints/default "$tmp" ; then
+    echo "❌ drift detected (blueprints <> rendered)"
+    exit 1
+  fi
+  echo "✅ no drift"
+  '''
+]
+
+# ===============================
+#  CI helpers (watch current SHA)
+# ===============================
+
+[tasks."ci:watch"]
+description = "Watch latest push-run for HEAD until success"
+usage = '''
+flag "--workflow <wf>" help="Workflow name or file to filter (defaults to env MISE_CI_WORKFLOW)" default=""
+flag "--timeout <dur>" help="Timeout like 15m/45m" default=""
+'''
+run = [
+  '''
+  set -euo pipefail
+  sha=$(git rev-parse HEAD)
+  wf="${usage_workflow:-${MISE_CI_WORKFLOW}}"
+  to="${usage_timeout:-${MISE_CI_TIMEOUT}}"
+  args=(-c "$sha" -e push -L 1 --json databaseId -q '.[0].databaseId')
+  if [ -n "$wf" ]; then args=(-w "$wf" "${args[@]}"); fi
+  id=$(gh run list "${args[@]}" || true)
+  [ -n "$id" ] || { echo "No push-run found for $sha"; exit 2; }
+  gh run watch "$id" --timeout "$to" --exit-status --compact
+  gh run view  "$id" --json headSha,conclusion -q '
+    if .conclusion=="success" and .headSha=="'"$(git rev-parse HEAD)"'" then
+      "ok"
+    else
+      halt_error(1)
+    end' >/dev/null
+  echo "✅ CI green for $(git rev-parse --short HEAD)"
+  '''
+]
+
+[tasks."ci:push-watch"]
+description = "Push current branch then watch CI for HEAD"
+run         = ["git push", { task = "ci:watch" }]
+
+# ===============================
+#  gh helpers
+# ===============================
+
+[tasks."gh:ensure-auth"]
+description = "Ensure gh is authenticated; prompt if not"
+hide        = true
+run         = '''
+if ! gh auth status >/dev/null 2>&1; then
+  echo "🔐 gh not logged in; launching 'gh auth login'..."
+  gh auth login
+fi
+'''
+
+# ===============================
+#  Tool locking (mise.lock)
+# ===============================
+
+[tasks."tools:install"]
+description = "Install tools and write/refresh mise.lock (commit it)"
+run         = ["mise install"]
+
+[tasks."tools:update"]
+description = "Update to latest allowed tool versions and refresh mise.lock"
+run         = ["mise upgrade", "mise install"]
