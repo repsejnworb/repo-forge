@@ -1,11 +1,8 @@
 [tools]
 cue = "latest"
 
-[[watch_files]]
-#patterns = ["../watch/*"]
-#run = "echo file changed"
-patterns = ["../../repo-forge/blueprints/default/*"]
-run = "echo Files Changed; cp ../../repo-forge/blueprints/default/* ~/dev/personal/tmp/forge-child/"
+[env]
+CUE_REGISTRY="ghcr.io/repsejnworb"
 
 [tasks.init]
 description = "Initialize CUE module for this repo and fetch repo-forge templates (idempotent)"
@@ -14,7 +11,7 @@ depends     = ["init:module"]
 [tasks."init:module"]
 description = "Create cue.mod if missing, add templates module, tidy"
 run = [
-  "test -d cue.mod || cue mod init \"github.com/repsejnworb/${PWD##*/}\"",
+  "test -d cue.mod || cue mod init --source=git \"github.com/repsejnworb/${PWD##*/}\"@v0",
   "cue mod get github.com/repsejnworb/repoforger@v0",
   "cue mod tidy"
 ]

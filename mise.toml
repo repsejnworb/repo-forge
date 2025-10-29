@@ -8,6 +8,7 @@ cocogitto  = "latest"
 lefthook   = "latest"
 
 [env]
+CUE_REGISTRY="ghcr.io/repsejnworb"
 MISE_CI_WORKFLOW = "ci.yml"
 MISE_CI_TIMEOUT  = "30m"
 
