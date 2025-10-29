@@ -3,7 +3,7 @@ package repoforge
 import (
 	// import from this module
 	"github.com/repsejnworb/repo-forge/forge"
-	"github.com/repsejnworb/repo-forge/workflows"
+	"github.com/repsejnworb/repo-forge/forge/workflows"
 )
 
 root: "root"

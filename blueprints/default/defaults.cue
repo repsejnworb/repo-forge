@@ -2,7 +2,7 @@ package project
 
 import (
 	forge "github.com/repsejnworb/repo-forge/forge"
-	workflows "github.com/repsejnworb/repo-forge/workflows"
+	workflows "github.com/repsejnworb/repo-forge/forge/workflows"
 )
 
 // Per-repo params (override here or in extra files later if needed)
