@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Build the CLI"
+#MISE cue = "latest"
+cue mod get github.com/repsej/repoforger@latest
+cue mod tidy

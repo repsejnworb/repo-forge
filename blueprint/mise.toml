@@ -1,0 +1,12 @@
+[tools]
+cue = "latest"
+
+[env]
+CUE_REGISTRY="ghcr.io/repsejnworb"
+
+[tasks.init]
+description = "Initialize CUE module for this repo"
+outputs = ['cue.mod/module.cue']
+run = "cue mod init --source=git \"github.com/repsejnworb/${PWD##*/}\"@v0"
+depends_post = ["sync"]
+

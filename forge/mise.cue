@@ -17,6 +17,14 @@ MISE: {
 
 	// Core tasks every generated repo gets.
 	tasks: {
+    // pulling changes from repsejnworb/repoforger
+    sync: {
+      description: "Sync changes from repsejnworb/repoforger"
+      run: [
+        "cue mod get github.com/repsejnworb/repoforger@latest",
+        "cue mod tidy",
+      ]
+    }
 		test: {
 			description: "Run test suite (customize per language)"
 			run: ["echo 'TODO: replace with real tests'"]

@@ -20,3 +20,5 @@ Outputs: {
 	"cog.toml":                      forge.Cog
 	"mise.toml":                     forge.MISE
 }
+
+mise: forge.MISE
