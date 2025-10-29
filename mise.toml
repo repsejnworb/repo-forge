@@ -53,7 +53,7 @@ description = "Create a new GitHub repo from blueprints/default and push initial
 usage = '''
 arg  "<name>"                 help="Repository name (e.g., cpout)"
 flag "--visibility <vis>"     help="Repo visibility"      default="public" { choices "public" "private" "internal" }
-flag "--description <text>"   help="Repo description"     default="Generated from repo-forge"
+flag "--description <text>"   help="Repo description"     default="Generated from repoforger"
 flag "--branch <branch>"      help="Default branch name"  default="master"
 flag "--homepage <url>"       help="Homepage URL"         default=""
 flag "--disable-issues"       help="Disable issues"       default=true
@@ -85,7 +85,7 @@ run = [
   cd "${usage_name?}"
   git checkout -B "${usage_branch?}"
   git add .
-  git commit -m "chore: bootstrap from repo-forge"
+  git commit -m "chore: bootstrap from repoforger"
   git push -u origin "${usage_branch?}"
   '''
 ]
@@ -103,7 +103,7 @@ run = [
   cd "${usage_path?}"
   git init
   git add .
-  git commit -m "chore: bootstrap locally from repo-forge"
+  git commit -m "chore: bootstrap locally from repoforger"
   '''
 ]
 
@@ -140,9 +140,9 @@ run = [
   '''
   set -euo pipefail
   if [ -n "${usage_tag?}" ]; then
-    cue mod get "github.com/repsejnworb/repo-forge/templates@${usage_tag?}"
+    cue mod get "github.com/repsejnworb/repoforger/templates@${usage_tag?}"
   else
-    cue mod get -u "github.com/repsejnworb/repo-forge/templates@${usage_series?}"
+    cue mod get -u "github.com/repsejnworb/repoforger/templates@${usage_series?}"
   fi
   cue mod tidy
   '''
