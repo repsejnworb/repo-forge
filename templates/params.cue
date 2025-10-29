@@ -1,4 +1,4 @@
-package templates
+package forge
 
 Params: {
 	defaultBranch: *"main" | string

@@ -1,4 +1,4 @@
-package lefthook
+package forge
 
 Lefthook: {
 	"commit-msg": {

@@ -1,27 +1,22 @@
 package project
 
 import (
-	workflows "github.com/repsejnworb/repo-forge/templates/workflows"
-	lefthook "github.com/repsejnworb/repo-forge/templates/lefthook"
-	cog "github.com/repsejnworb/repo-forge/templates/cog"
-	mise "github.com/repsejnworb/repo-forge/templates/mise"
+  forge     "github.com/repsejnworb/repo-forge/templates"
+  workflows "github.com/repsejnworb/repo-forge/templates/workflows"
 )
 
-// Project-level knobs you can override per repo.
-// You can expand this as your standards grow.
+// Per-repo params (override here or in extra files later if needed)
 Params: {
-	defaultBranch: *"master" | string
-	pythonVersion: *"3.12" | string
-	repoDesc:      *"Generated from repo-forge" | string
+  defaultBranch: *"main" | string
+  pythonVersion: *"3.12"   | string
+  repoDesc:      *"Generated from repo-forge" | string
 }
 
-// Bind those params into templates as needed later. For now we keep it simple.
-
-// Logical outputs (used by mise tasks to export file-by-file)
+// Map logical outputs to concrete files; the bootstrap init task will export each key.
 Outputs: {
-	".github/workflows/ci.yml":      workflows.CI
-	".github/workflows/release.yml": workflows.Release
-	"lefthook.yml":                  lefthook.Lefthook
-	"cog.toml":                      cog.Cog
-	"mise.toml":                     mise.MISE
+  ".github/workflows/ci.yml":      workflows.CI
+  ".github/workflows/release.yml": workflows.Release
+  "lefthook.yml":                  forge.Lefthook
+  "cog.toml":                      forge.Cog
+  "mise.toml":                     forge.MISE
 }

@@ -1,4 +1,4 @@
-package mise
+package forge
 
 MISE: {
   tools: {
