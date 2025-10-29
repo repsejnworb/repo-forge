@@ -1,0 +1,16 @@
+repo-forge/
+├── README.md
+├── LICENSE
+├── mise.toml
+├── templates/            # CUE source for workflows, mise defaults, etc.
+│   ├── cue.mod/          # (created by cue mod init later)
+│   ├── workflows/
+│   └── mise/
+├── blueprints/           # generated minimal skeleton(s)
+│   └── default/
+│       ├── standards.cue
+│       ├── .github/workflows/ci.yml
+│       ├── mise.toml
+│       ├── .gitignore
+│       └── README.md
+└── scripts/              # helper scripts if you want them
