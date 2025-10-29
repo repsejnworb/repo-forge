@@ -15,6 +15,6 @@ depends     = ["init:module"]
 description = "Create cue.mod if missing, add templates module, tidy"
 run = [
   "test -d cue.mod || cue mod init \"github.com/repsejnworb/${PWD##*/}\"",
-  "cue mod get github.com/repsejnworb/repo-forge/templates@main",
+  "cue mod get github.com/repsejnworb/repo-forge/templates@v0.1.0",
   "cue mod tidy"
 ]
